@@ -1,0 +1,7 @@
+.AppleDouble
+.idea
+public
+docs
+build
+vendor/*
+*.lock
