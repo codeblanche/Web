@@ -1,7 +1,32 @@
 <?php
 
+namespace Web;
+
+/**
+ * Assists in the extractions data from a uri
+ */
 class Uri
 {
+    /**
+     * @var string
+     */
+    protected $basename;
+
+    /**
+     * @var string
+     */
+    protected $dirname;
+
+    /**
+     * @var string
+     */
+    protected $extension;
+
+    /**
+     * @var string
+     */
+    protected $filename;
+
     /**
      * @var string
      */
@@ -45,7 +70,7 @@ class Uri
     /**
      * Constructor override.
      *
-     * @param   string|array $input
+     * @param string|array $input
      */
     public function __construct($input = null)
     {
@@ -62,6 +87,38 @@ class Uri
     public function __toString()
     {
         return $this->toString();
+    }
+
+    /**
+     * @return string
+     */
+    public function getBasename()
+    {
+        return $this->basename;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDirname()
+    {
+        return $this->dirname;
+    }
+
+    /**
+     * @return string
+     */
+    public function getExtension()
+    {
+        return $this->extension;
+    }
+
+    /**
+     * @return string
+     */
+    public function getFilename()
+    {
+        return $this->filename;
     }
 
     /**
@@ -105,7 +162,7 @@ class Uri
     }
 
     /**
-     * @return \QueryString
+     * @return QueryString
      * @return Uri
      */
     public function getQuery()
@@ -144,6 +201,62 @@ class Uri
         else {
             $this->fromString($input);
         }
+    }
+
+    /**
+     * @param string $basename
+     *
+     * @return Uri
+     */
+    public function setBasename($basename)
+    {
+        $this->basename = $basename;
+
+        $this->buildPath();
+
+        return $this;
+    }
+
+    /**
+     * @param string $dirname
+     *
+     * @return Uri
+     */
+    public function setDirname($dirname)
+    {
+        $this->dirname = $dirname;
+
+        $this->buildPath();
+
+        return $this;
+    }
+
+    /**
+     * @param string $extension
+     *
+     * @return Uri
+     */
+    public function setExtension($extension)
+    {
+        $this->extension = $extension;
+
+        $this->buildPath();
+
+        return $this;
+    }
+
+    /**
+     * @param string $filename
+     *
+     * @return Uri
+     */
+    public function setFilename($filename)
+    {
+        $this->filename = $filename;
+
+        $this->buildPath();
+
+        return $this;
     }
 
     /**
@@ -191,6 +304,8 @@ class Uri
     {
         $this->path = $path;
 
+        $this->parsePath();
+
         return $this;
     }
 
@@ -207,7 +322,7 @@ class Uri
     }
 
     /**
-     * @param \QueryString $query
+     * @param QueryString $query
      *
      * @return Uri
      */
@@ -245,7 +360,7 @@ class Uri
     /**
      * Convert to an array
      *
-     * @return  array
+     * @return array
      */
     public function toArray()
     {
@@ -268,7 +383,7 @@ class Uri
     /**
      * Convert to a string.
      *
-     * @return  string
+     * @return string
      */
     public function toString()
     {
@@ -305,11 +420,29 @@ class Uri
     }
 
     /**
+     * Rebuild the path using the path components
+     *
+     * @return Uri
+     */
+    protected function buildPath()
+    {
+        $this->basename = $this->filename;
+
+        if (!empty($this->extension)) {
+            $this->basename .= '.' . $this->extension;
+        }
+
+        $this->path = $this->dirname . '/' . $this->basename;
+
+        return $this;
+    }
+
+    /**
      * Import from an array
      *
-     * @param   array $array
+     * @param array $array
      *
-     * @return  Uri
+     * @return Uri
      */
     protected function fromArray($array)
     {
@@ -321,11 +454,21 @@ class Uri
 
         if (!empty($array['query'])) {
             $this->query->import($array['query']);
-
-            unset($array['query']);
         }
 
-        $keys = array('scheme', 'host', 'port', 'user', 'pass', 'path', 'query', 'fragment');
+        $keys = array(
+            'scheme',
+            'host',
+            'port',
+            'user',
+            'pass',
+            'path',
+            'fragment',
+            'dirname',
+            'basename',
+            'extension',
+            'filename',
+        );
 
         foreach ($keys as $key) {
             if (!isset($array[$key])) {
@@ -333,7 +476,13 @@ class Uri
             }
 
             $this->$key = $array[$key];
+
+            if ($key === 'path') {
+                $this->parsePath();
+            }
         }
+
+        $this->buildPath();
 
         return $this;
     }
@@ -341,9 +490,9 @@ class Uri
     /**
      * Import from a string
      *
-     * @param   string $uri
+     * @param string $uri
      *
-     * @return  Uri
+     * @return Uri
      */
     protected function fromString($uri)
     {
@@ -352,6 +501,38 @@ class Uri
         }
 
         $this->fromArray(parse_url($uri));
+
+        return $this;
+    }
+
+    /**
+     * Extract the path components from the current path
+     *
+     * @return Uri
+     */
+    protected function parsePath()
+    {
+        if (empty($this->path)) {
+            return $this;
+        }
+
+        $parts = pathinfo($this->path);
+
+        if (isset($parts['dirname'])) {
+            $this->dirname = $parts['dirname'];
+        }
+
+        if (isset($parts['basename'])) {
+            $this->basename = $parts['basename'];
+        }
+
+        if (isset($parts['extension'])) {
+            $this->extension = $parts['extension'];
+        }
+
+        if (isset($parts['filename'])) {
+            $this->filename = $parts['filename'];
+        }
 
         return $this;
     }

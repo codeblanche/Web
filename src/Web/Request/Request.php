@@ -2,127 +2,55 @@
 
 namespace Web\Request;
 
+use Web\Uri;
+
 class Request
 {
     /**
-     * @var string
+     * @var Uri
      */
     protected $uri;
 
     /**
-     * @var string
-     */
-    protected $path;
-
-    /**
-     * @var string
-     */
-    protected $query;
-
-    /**
-     * @var string
-     */
-    protected $dirname;
-
-    /**
-     * @var string
-     */
-    protected $basename;
-
-    /**
-     * @var string
-     */
-    protected $extension;
-
-    /**
-     * @var string
-     */
-    protected $filename;
-
-    /**
      * Default constructor
      *
-     * @param string $requestUri
+     * @param null $requestUri
      */
     public function __construct($requestUri = null)
     {
-        $this->uri = $this->resolveUri($requestUri);
-
-        $this->parseUri();
+        $this->uri = new Uri(
+            $this->resolveUri($requestUri)
+        );
     }
 
     /**
-     * @param $uri
+     * Retrieve a value using the following pecking order POST, GET, COOKIE, SERVER, ENV
      *
-     * @return string
-     */
-    protected function resolveUri($uri)
-    {
-        if (empty($uri)) {
-            return $this->server('REQUEST_URI');
-        }
-
-        return $uri;
-    }
-
-    /**
      * @param string $name
      *
-     * @return string
+     * @return mixed
      */
-    public function server($name)
+    public function value($name)
     {
-        return filter_input(INPUT_SERVER, $name);
-    }
+        $result = $this->post($name);
 
-    /**
-     *
-     */
-    protected function parseUri()
-    {
-        if (empty($this->uri)) {
-            return;
+        if (is_null($result)) {
+            $result = $this->get($name);
         }
 
-        $parts = parse_url($this->uri);
-
-        if (isset($parts['path'])) {
-            $this->path = $parts['path'];
-
-            $this->parsePath();
+        if (is_null($result)) {
+            $result = $this->cookie($name);
         }
 
-        if (isset($parts['query'])) {
-            $this->query = $parts['query'];
-        }
-    }
-
-    /**
-     *
-     */
-    protected function parsePath()
-    {
-        if (empty($this->path)) {
-            return;
+        if (is_null($result)) {
+            $result = $this->server($name);
         }
 
-        $parts = pathinfo($this->path);
-
-        if (isset($parts['dirname'])) {
-            $this->dirname = $parts['dirname'];
+        if (is_null($result)) {
+            $result = $this->env($name);
         }
 
-        if (isset($parts['basename'])) {
-            $this->basename = $parts['basename'];
-        }
-
-        if (isset($parts['extension'])) {
-            $this->extension = $parts['extension'];
-        }
-
-        if (isset($parts['filename'])) {
-            $this->filename = $parts['filename'];
-        }
+        return $result;
     }
 
     /**
@@ -137,39 +65,158 @@ class Request
 
     /**
      * @param string $name
+     *
+     * @return mixed
+     */
+    public function env($name)
+    {
+        return filter_input(INPUT_ENV, $name);
+    }
+
+    /**
+     * Move an uploaded file (POST method) to the desired destination
+     *
+     * @param string $name
      * @param string $destinationDir
      * @param string $newName
      *
      * @return bool
      */
-    public function file($name, $destinationDir, $newName = '')
+    public function filePost($name, $destinationDir, $newName = '')
+    {
+        if (!isset($_FILES[$name])) {
+            return false;
+        }
+
+        $destinationName = $_FILES[$name]['name'];
+
+        if (!empty($newName)) {
+            $destinationName = $newName;
+        }
+
+        return move_uploaded_file($_FILES[$name]['tmp_name'], "$destinationDir/$destinationName");
+    }
+
+    /**
+     * Move an uploaded file (PUT method) to the desired destination
+     *
+     * @param string $destinationDir
+     * @param string $newName
+     *
+     * @return bool
+     */
+    public function filePut($destinationDir, $newName = '')
     {
         $destinationName = $this->resolveName($newName);
+        $destination     = fopen("$destinationDir/$destinationName", "w+");
+        $source          = fopen("php://input", "r");
 
-        if ($this->server('REQUEST_METHOD') === Method::PUT) {
-            $destination = fopen("$destinationDir/$destinationName", "w+");
-            $source      = fopen("php://input", "r");
-
-            if (!is_resource($destination) || !is_resource($source)) {
-                return false;
-            }
-
-            while ($buffer = fread($source, 1024)) {
-                fwrite($destination, $buffer, 1024);
-            }
-
-            fclose($destination);
-            fclose($source);
+        if (!is_resource($destination) || !is_resource($source)) {
+            return false;
         }
-        else {
-            if (!isset($_FILES[$name])) {
-                return false;
-            }
 
-            move_uploaded_file($_FILES[$name]['tmp_name'], "$destinationDir/$destinationName");
+        while ($buffer = fread($source, 1024)) {
+            fwrite($destination, $buffer, 1024);
         }
+
+        fclose($destination);
+        fclose($source);
 
         return true;
+    }
+
+    /**
+     * @param string $name
+     *
+     * @return mixed
+     */
+    public function get($name)
+    {
+        return filter_input(INPUT_POST, $name);
+    }
+
+    /**
+     * @return string
+     */
+    public function getBasename()
+    {
+        return $this->uri->getBasename();
+    }
+
+    /**
+     * @return string
+     */
+    public function getDir()
+    {
+        return $this->uri->getDirname();
+    }
+
+    /**
+     * @return string
+     */
+    public function getDocumentRoot()
+    {
+        return $this->server('DOCUMENT_ROOT');
+    }
+
+    /**
+     * @return string
+     */
+    public function getExtension()
+    {
+        return $this->uri->getExtension();
+    }
+
+    /**
+     * @return string
+     */
+    public function getFilename()
+    {
+        return $this->uri->getFilename();
+    }
+
+    /**
+     * @return string
+     */
+    public function getPath()
+    {
+        return $this->uri->getPath();
+    }
+
+    /**
+     * @return string
+     */
+    public function getQuery()
+    {
+        return $this->uri->getQuery()->toString();
+    }
+
+    /**
+     * @return string
+     */
+    public function getUri()
+    {
+        return $this->uri->toString();
+    }
+
+    /**
+     * @param string $name
+     *
+     * @return mixed
+     */
+    public function post($name)
+    {
+        return filter_input(INPUT_POST, $name);
+    }
+
+    /**
+     * @param string $name
+     *
+     * @return string
+     */
+    public function server($name)
+    {
+        return filter_input(INPUT_SERVER, $name);
     }
 
     /**
@@ -187,96 +234,16 @@ class Request
     }
 
     /**
-     * @return string
-     */
-    public function getFilename()
-    {
-        return $this->filename;
-    }
-
-    /**
-     * @param string $name
+     * @param $uri
      *
-     * @return mixed
-     */
-    public function get($name)
-    {
-        return filter_input(INPUT_POST, $name);
-    }
-
-    /**
-     * @param string $name
-     *
-     * @return mixed
-     */
-    public function post($name)
-    {
-        return filter_input(INPUT_POST, $name);
-    }
-
-    /**
-     * @param string $name
-     *
-     * @return mixed
-     */
-    public function env($name)
-    {
-        return filter_input(INPUT_ENV, $name);
-    }
-
-    /**
      * @return string
      */
-    public function getBasename()
+    protected function resolveUri($uri)
     {
-        return $this->basename;
-    }
+        if (empty($uri)) {
+            return $this->server('REQUEST_URI');
+        }
 
-    /**
-     * @return string
-     */
-    public function getDir()
-    {
-        return $this->dirname;
-    }
-
-    /**
-     * @return string
-     */
-    public function getExtension()
-    {
-        return $this->extension;
-    }
-
-    /**
-     * @return string
-     */
-    public function getPath()
-    {
-        return $this->path;
-    }
-
-    /**
-     * @return string
-     */
-    public function getQuery()
-    {
-        return $this->query;
-    }
-
-    /**
-     * @return string
-     */
-    public function getUri()
-    {
-        return $this->uri;
-    }
-
-    /**
-     * @return string
-     */
-    public function getDocumentRoot()
-    {
-        return $this->server('DOCUMENT_ROOT');
+        return $uri;
     }
 }
