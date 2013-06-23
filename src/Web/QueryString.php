@@ -190,7 +190,7 @@ class QueryString
             return $this;
         }
 
-        $this->fromArray(array_replace_recursive($this->data, $data));
+        $this->data = array_replace_recursive($this->data, $data);
 
         return $this;
     }
