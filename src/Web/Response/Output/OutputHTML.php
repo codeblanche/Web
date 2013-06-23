@@ -2,7 +2,7 @@
 
 namespace Web\Response\Output;
 
-use Web\Response\Abstraction\OutputStrategyInterface;
+use Web\Response\Output\Abstraction\OutputStrategyInterface;
 
 class OutputHTML implements OutputStrategyInterface
 {

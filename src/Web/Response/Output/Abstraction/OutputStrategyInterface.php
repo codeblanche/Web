@@ -1,6 +1,6 @@
 <?php
 
-namespace Web\Response\Abstraction;
+namespace Web\Response\Output\Abstraction;
 
 interface OutputStrategyInterface 
 {
