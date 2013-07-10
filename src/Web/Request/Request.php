@@ -2,6 +2,7 @@
 
 namespace Web\Request;
 
+use InvalidArgumentException;
 use Web\Uri;
 
 class Request
@@ -15,12 +16,16 @@ class Request
      * Default constructor
      *
      * @param null $requestUri
+     *
+     * @return \Web\Request\Request
      */
     public function __construct($requestUri = null)
     {
-        $this->uri = new Uri(
-            $this->resolveUri($requestUri)
-        );
+        if (empty($requestUri)) {
+            $requestUri = $this->server('REQUEST_URI');
+        }
+
+        $this->uri = new Uri($requestUri);
     }
 
     /**
@@ -60,7 +65,11 @@ class Request
      */
     public function cookie($name)
     {
-        return filter_input(INPUT_COOKIE, $name);
+        if (!isset($_COOKIE[$name])) {
+            return null;
+        }
+
+        return $_COOKIE[$name];
     }
 
     /**
@@ -70,59 +79,54 @@ class Request
      */
     public function env($name)
     {
-        return filter_input(INPUT_ENV, $name);
+        if (!isset($_ENV[$name])) {
+            return null;
+        }
+
+        return $_ENV[$name];
     }
 
     /**
-     * Move an uploaded file (POST method) to the desired destination
+     * Retrieve the the date associated with a file upload
      *
      * @param string $name
-     * @param string $destinationDir
-     * @param string $newName
      *
-     * @return bool
+     * @return array
      */
-    public function filePost($name, $destinationDir, $newName = '')
+    public function files($name)
     {
         if (!isset($_FILES[$name])) {
-            return false;
+            return null;
         }
 
-        $destinationName = $_FILES[$name]['name'];
-
-        if (!empty($newName)) {
-            $destinationName = $newName;
-        }
-
-        return move_uploaded_file($_FILES[$name]['tmp_name'], "$destinationDir/$destinationName");
+        return $_FILES[$name];
     }
 
     /**
-     * Move an uploaded file (PUT method) to the desired destination
+     * Retrieve date from the input stream
      *
-     * @param string $destinationDir
-     * @param string $newName
+     * @param string $source
      *
-     * @return bool
+     * @throws InvalidArgumentException
+     * @return mixed
      */
-    public function filePut($destinationDir, $newName = '')
+    public function put($source = 'php://input')
     {
-        $destinationName = $this->resolveName($newName);
-        $destination     = fopen("$destinationDir/$destinationName", "w+");
-        $source          = fopen("php://input", "r");
+        $source = @fopen($source, 'r');
 
-        if (!is_resource($destination) || !is_resource($source)) {
-            return false;
+        if (!is_resource($source)) {
+            throw new InvalidArgumentException('Expected parameter 1 to be an open-able resource');
         }
+
+        $data = null;
 
         while ($buffer = fread($source, 1024)) {
-            fwrite($destination, $buffer, 1024);
+            $data .= $buffer;
         }
 
-        fclose($destination);
         fclose($source);
 
-        return true;
+        return $data;
     }
 
     /**
@@ -132,71 +136,19 @@ class Request
      */
     public function get($name)
     {
-        return filter_input(INPUT_POST, $name);
+        if (!isset($_GET[$name])) {
+            return null;
+        }
+
+        return $_GET[$name];
     }
 
     /**
-     * @return string
+     * @return \Web\Uri
      */
-    public function getBasename()
+    public function uri()
     {
-        return $this->uri->getBasename();
-    }
-
-    /**
-     * @return string
-     */
-    public function getDir()
-    {
-        return $this->uri->getDirname();
-    }
-
-    /**
-     * @return string
-     */
-    public function getDocumentRoot()
-    {
-        return $this->server('DOCUMENT_ROOT');
-    }
-
-    /**
-     * @return string
-     */
-    public function getExtension()
-    {
-        return $this->uri->getExtension();
-    }
-
-    /**
-     * @return string
-     */
-    public function getFilename()
-    {
-        return $this->uri->getFilename();
-    }
-
-    /**
-     * @return string
-     */
-    public function getPath()
-    {
-        return $this->uri->getPath();
-    }
-
-    /**
-     * @return string
-     */
-    public function getQuery()
-    {
-        return $this->uri->getQuery()->toString();
-    }
-
-    /**
-     * @return string
-     */
-    public function getUri()
-    {
-        return $this->uri->toString();
+        return $this->uri;
     }
 
     /**
@@ -206,7 +158,11 @@ class Request
      */
     public function post($name)
     {
-        return filter_input(INPUT_POST, $name);
+        if (!isset($_POST[$name])) {
+            return null;
+        }
+
+        return $_POST[$name];
     }
 
     /**
@@ -216,34 +172,10 @@ class Request
      */
     public function server($name)
     {
-        return filter_input(INPUT_SERVER, $name);
-    }
-
-    /**
-     * @param $override
-     *
-     * @return string
-     */
-    protected function resolveName($override)
-    {
-        if (!empty($override)) {
-            return $override;
+        if (!isset($_SERVER[$name])) {
+            return null;
         }
 
-        return $this->getFilename();
-    }
-
-    /**
-     * @param $uri
-     *
-     * @return string
-     */
-    protected function resolveUri($uri)
-    {
-        if (empty($uri)) {
-            return $this->server('REQUEST_URI');
-        }
-
-        return $uri;
+        return $_SERVER[$name];
     }
 }

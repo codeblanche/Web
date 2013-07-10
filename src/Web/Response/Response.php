@@ -2,6 +2,8 @@
 
 namespace Web\Response;
 
+use RuntimeError;
+use RuntimeException;
 use Web\Response\Abstraction\HeaderInterface;
 use Web\Response\Output\Abstraction\OutputStrategyInterface;
 use Web\Response\Output\OutputHTML;
@@ -83,16 +85,13 @@ class Response
     /**
      * @param string $url
      *
+     * @throws RuntimeException
      * @return Response
      */
     public function redirect($url)
     {
         if (headers_sent()) {
-            echo '<script type="text/javascript"> ' .
-                "location.href = '$url';" .
-                '</script>';
-
-            return $this;
+            throw new RuntimeException('Unable to issue redirect header. Headers have already been sent.');
         }
 
         return $this->header(new Header(Header::LOCATION, $url));
@@ -144,7 +143,7 @@ class Response
      *
      * @param $src
      *
-     * @throws \RuntimeException
+     * @throws RuntimeException
      * @return int|bool
      */
     public function sendFile($src)
@@ -152,7 +151,7 @@ class Response
         $pointer = fopen($src, 'r');
 
         if (!is_resource($pointer)) {
-            throw new \RuntimeException("Unable to load '$src' for sending.");
+            throw new RuntimeException("Unable to load '$src' for sending.");
         }
 
         $result = fpassthru($pointer);

@@ -201,6 +201,8 @@ class Uri
         else {
             $this->fromString($input);
         }
+
+        return $this;
     }
 
     /**
@@ -210,9 +212,7 @@ class Uri
      */
     public function setBasename($basename)
     {
-        $this->basename = $basename;
-
-        $this->buildPath();
+        $this->parsePath($basename)->buildPath();
 
         return $this;
     }
@@ -302,9 +302,7 @@ class Uri
      */
     public function setPath($path)
     {
-        $this->path = $path;
-
-        $this->parsePath();
+        $this->parsePath($path)->buildPath();
 
         return $this;
     }
@@ -322,12 +320,18 @@ class Uri
     }
 
     /**
-     * @param QueryString $query
+     * @param QueryString|string $query
      *
      * @return Uri
      */
     public function setQuery($query)
     {
+        if (!($query instanceof QueryString)) {
+            $this->query = new QueryString($query);
+
+            return $this;
+        }
+
         $this->query = $query;
 
         return $this;
@@ -369,14 +373,18 @@ class Uri
             : '';
 
         return array(
-            'scheme'   => $this->scheme,
-            'host'     => $this->host,
-            'port'     => $this->port,
-            'user'     => $this->user,
-            'pass'     => $this->pass,
-            'path'     => $this->path,
-            'query'    => $qs,
-            'fragment' => $this->fragment,
+            'scheme'    => $this->scheme,
+            'host'      => $this->host,
+            'port'      => $this->port,
+            'user'      => $this->user,
+            'pass'      => $this->pass,
+            'path'      => $this->path,
+            'basename'  => $this->basename,
+            'dirname'   => $this->dirname,
+            'extension' => $this->extension,
+            'filename'  => $this->filename,
+            'query'     => $qs,
+            'fragment'  => $this->fragment,
         );
     }
 
@@ -432,7 +440,11 @@ class Uri
             $this->basename .= '.' . $this->extension;
         }
 
-        $this->path = $this->dirname . '/' . $this->basename;
+        $this->path = $this->dirname;
+
+        if (!empty($this->basename)) {
+            $this->path .= '/' . $this->basename;
+        }
 
         return $this;
     }
@@ -478,7 +490,7 @@ class Uri
             $this->$key = $array[$key];
 
             if ($key === 'path') {
-                $this->parsePath();
+                $this->parsePath($this->path);
             }
         }
 
@@ -508,15 +520,22 @@ class Uri
     /**
      * Extract the path components from the current path
      *
+     * @param string $path
+     *
      * @return Uri
      */
-    protected function parsePath()
+    protected function parsePath($path = null)
     {
-        if (empty($this->path)) {
+        $this->dirname   = '';
+        $this->basename  = '';
+        $this->extension = '';
+        $this->filename  = '';
+
+        if (empty($path)) {
             return $this;
         }
 
-        $parts = pathinfo($this->path);
+        $parts = pathinfo($path);
 
         if (isset($parts['dirname'])) {
             $this->dirname = $parts['dirname'];

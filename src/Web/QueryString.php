@@ -53,7 +53,7 @@ class QueryString
      *
      * @return mixed
      */
-    public function &get($key)
+    public function get($key)
     {
         if (!isset($this->data[$key])) {
             return null;
