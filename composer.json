@@ -1,0 +1,31 @@
+{
+    "name"              : "codeblanche/web",
+    "description"       : "PHP Web Essentials",
+    "authors"           : [
+        {
+            "name"  : "Merten van Gerven",
+            "email" : "merten@codeblanche.com"
+        }
+    ],
+    "license"           : "BSD-3-Clause",
+    "keywords"          : [
+        "CodeBlanche",
+        "Web",
+        "HTTP",
+        "Route",
+        "Router",
+        "Request",
+        "Response",
+        "PHP"
+    ],
+    "require"           : {
+        "php" : ">=5.3.3"
+    },
+    "autoload"          : {
+        "classmap" : ["./"],
+        "psr-0"    : {
+            "DI" : "src/"
+        }
+    }
+}
+

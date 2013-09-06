@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+    syntaxCheck="false"
+    processIsolation="false"
+    strict="false"
+    backupGlobals="false"
+    backupStaticAttributes="false"
+    stopOnError="false"
+    stopOnFailure="false"
+    stopOnSkipped="false"
+    stopOnIncomplete="false"
+    bootstrap="./bootstrap.php">
+
+    <testsuites>
+        <testsuite name="Web">
+            <directory>Web</directory>
+        </testsuite>
+    </testsuites>
+    <filter>
+        <whitelist processUncoveredFilesFromWhitelist="true">
+            <directory suffix=".php">../src/</directory>
+        </whitelist>
+    </filter>
+    <logging>
+        <log
+            type="coverage-html"
+            target="../public/coverage"
+            title="Web"
+            charset="UTF-8"
+            yui="true"
+            highlight="true"
+            lowUpperBound="35"
+            hisghLowerBound="70"/>
+        <log type="coverage-clover" target="build/logs/clover.xml"/>
+    </logging>
+</phpunit>
