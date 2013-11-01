@@ -13,7 +13,7 @@ class RequestTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->request      = new Request();
+        $this->request      = new Request(null, 'PGCHE');
         $_POST['post1']     = 'post1';
         $_GET['get1']       = 'get1';
         $_COOKIE['cookie1'] = 'cookie1';
