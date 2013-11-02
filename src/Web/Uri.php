@@ -494,8 +494,6 @@ class Uri
             }
         }
 
-
-
         $this->buildPath();
 
         return $this;
