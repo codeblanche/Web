@@ -42,12 +42,28 @@ class Request
     public function __construct($requestUri = null, $requestOrder = 'GP')
     {
         if (empty($requestUri)) {
-            $requestUri = $this->server('REQUEST_URI');
+            $requestUri = $this->resolveFullUrlFromHeaders();
         }
 
         $this->uri = new Uri($requestUri);
 
         $this->setRequestOrder($requestOrder);
+    }
+
+    /**
+     * @return string
+     */
+    private function resolveFullUrlFromHeaders()
+    {
+        $rawProtocol = $this->server('SERVER_PROTOCOL');
+        $ssl         = $this->server('HTTPS') !== '';
+
+        $protocol = strtolower(substr($rawProtocol, 0, strpos($rawProtocol, '/'))) . ($ssl ? 's' : '');
+        $host     = $this->server('HTTP_HOST');
+        $port     = $this->server('SERVER_PORT');
+        $path     = $this->server('REQUEST_URI');
+
+        return "{$protocol}://{$host}:{$port}{$path}";
     }
 
     /**

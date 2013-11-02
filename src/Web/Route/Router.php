@@ -172,6 +172,7 @@ class Router
     {
         $this->routeType = $routeType;
 
+        $this->rules = array();
         $this->resolveRulePrototype();
 
         return $this;
