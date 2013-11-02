@@ -494,6 +494,8 @@ class Uri
             }
         }
 
+
+
         $this->buildPath();
 
         return $this;
@@ -538,7 +540,7 @@ class Uri
         $parts = pathinfo($path);
 
         if (isset($parts['dirname'])) {
-            $this->dirname = $parts['dirname'];
+            $this->dirname = rtrim($parts['dirname'], '/');
         }
 
         if (isset($parts['basename'])) {
