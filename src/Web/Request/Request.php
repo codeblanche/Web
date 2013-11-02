@@ -4,6 +4,7 @@ namespace Web\Request;
 
 use InvalidArgumentException;
 use Web\Exception\RuntimeException;
+use Web\QueryString;
 use Web\Uri;
 
 class Request
@@ -68,7 +69,6 @@ class Request
 
         $this->requestOrder = array_unique(str_split(strtoupper($requestOrder), 1));
     }
-
 
     /**
      * Retrieve a value using the configured request order
@@ -202,8 +202,10 @@ class Request
      */
     public function get($name)
     {
-        if ($this->uri()->getQuery()->has($name)) {
-            return $this->uri()->getQuery()->get($name);
+        $queryString = $this->uri()->getQuery();
+
+        if ($queryString instanceof QueryString && $queryString->has($name)) {
+            return $queryString->get($name);
         }
 
         if (!isset($_GET[$name])) {
