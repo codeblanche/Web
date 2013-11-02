@@ -24,7 +24,7 @@ class UriRule extends AbstractRule
         foreach ($parts as &$part) {
             $match = array();
 
-            if (preg_match('/^(\:|\?)([a-z_]{1}[a-z0-9\-_]*)$/i', $part, $match)) {
+            if (preg_match('/^(\:|\?)([a-z_]{1}[a-z\d\-_]*)$/i', $part, $match)) {
                 $optional            = $match[1] === '?' ? '?' : '';
                 $name                = $match[2];
                 $this->params[$name] = '';

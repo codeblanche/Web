@@ -25,7 +25,7 @@ class DomainRule extends AbstractRule
         foreach ($parts as &$part) {
             $match = array();
 
-            if (preg_match('/^(\:|\?)([a-z_]{1}[a-z0-9\-_]*)$/i', $part, $match)) {
+            if (preg_match('/^(\:|\?)([a-z\d]{1}[a-z\d\-]*)$/i', $part, $match)) {
                 $optional            = $match[1] === '?' ? '?' : '';
                 $name                = $match[2];
                 $this->params[$name] = '';
@@ -62,12 +62,12 @@ class DomainRule extends AbstractRule
             throw new RuntimeException('Expected a domain value');
         }
 
-        if (!preg_match('/^([a-z\d](-*[a-z\d])*)(\.([a-z\d](-*[a-z\d])*))*$/i', $value)) {
-            throw new RuntimeException("Specified domain '$value' contains illegal characters.");
+        if (strlen($value) > 253) {
+            throw new RuntimeException("Specified domain '$value' is too long. Maximum length of 253 characters permitted");
         }
 
-        if (!preg_match('/^.{1,253}$/', $value)) {
-            throw new RuntimeException("Specified domain '$value' is too long. Maximum length of 253 characters permitted");
+        if (!preg_match('/^([a-z\d](-*[a-z\d])*)(\.([a-z\d](-*[a-z\d])*))*$/i', $value)) {
+            throw new RuntimeException("Specified domain '$value' contains illegal characters.");
         }
 
         if (!preg_match('/^[^\.]{1,63}(\.[^\.]{1,63})*$/', $value)) {
