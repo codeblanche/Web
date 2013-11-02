@@ -202,6 +202,10 @@ class Request
      */
     public function get($name)
     {
+        if ($this->uri()->getQuery()->has($name)) {
+            return $this->uri()->getQuery()->get($name);
+        }
+
         if (!isset($_GET[$name])) {
             return null;
         }
