@@ -2,10 +2,16 @@
 
 namespace Web\Route;
 
+use Web\Exception\RuntimeException;
+use Web\Route\Abstraction\AbstractRule;
 use Web\Route\Abstraction\DependencyContainerInterface;
 
 class Router
 {
+    const ROUTE_TYPE_URI = 'uri';
+
+    const ROUTE_TYPE_DOMAIN = 'domain';
+
     /**
      * @var string
      */
@@ -22,23 +28,61 @@ class Router
     protected $matchParams = array();
 
     /**
-     * @var Rule
+     * @var AbstractRule
      */
     protected $rulePrototype;
 
     /**
-     * @var Rule[]
+     * @var string
+     */
+    protected $routeType;
+
+    /**
+     * @var AbstractRule[]
      */
     protected $rules = array();
 
     /**
-     * @param DependencyContainerInterface $dependencyManager
-     * @param Rule                         $rulePrototype
+     * @var array
      */
-    public function __construct(DependencyContainerInterface $dependencyManager, Rule $rulePrototype)
+    protected $routeTypeRulePrototypeMap = array(
+        'uri'    => 'Route\UriRule',
+        'domain' => 'Route\DomainRule',
+    );
+
+    /**
+     * @param DependencyContainerInterface $dependencyManager
+     * @param string                       $routeType
+     */
+    public function __construct(DependencyContainerInterface $dependencyManager, $routeType = self::ROUTE_TYPE_URI)
     {
         $this->dependencyManager = $dependencyManager;
-        $this->rulePrototype     = $rulePrototype;
+        $this->routeType         = $routeType;
+
+        $this->resolveRulePrototype();
+    }
+
+    /**
+     * Resolve the rule prototype object for the current routeType
+     *
+     * @throws \Web\Exception\RuntimeException
+     */
+    private function resolveRulePrototype()
+    {
+        if (!isset($this->routeTypeRulePrototypeMap[$this->routeType])) {
+            throw new RuntimeException("Unable to resolve rule for route type '$this->routeType'. Route type is not supported.");
+        }
+
+        $prototypeClass = $this->routeTypeRulePrototypeMap[$this->routeType];
+        $prototype      = $this->dependencyManager->get($prototypeClass);
+
+        if (!($prototype instanceof AbstractRule)) {
+            $givenType = get_class($prototype);
+
+            throw new RuntimeException("The resolved rule prototype must inherit from Web\Route\Rule. Rule of type '$givenType' is not valid.");
+        }
+
+        $this->rulePrototype = $prototype;
     }
 
     /**
@@ -56,20 +100,17 @@ class Router
     /**
      * Define a routing rule with corresponding controller
      *
-     * @param string $path
+     * @param string $pattern
      * @param string $controller Class name or alias
-     * @param array  $expressions
+     * @param array  $filters
      *
      * @return $this
      */
-    public function define($path, $controller, $expressions = array())
+    public function define($pattern, $controller, $filters = array())
     {
         $rule = clone $this->rulePrototype;
 
-        $rule
-            ->setPath($path)
-            ->setController($controller)
-            ->setExpressions($expressions);
+        $rule->setPattern($pattern)->setController($controller)->setFilters($filters);
 
         array_push($this->rules, $rule);
 
@@ -85,18 +126,16 @@ class Router
     }
 
     /**
-     * @param string $url
+     * @param string $value
      *
      * @return object
      */
-    public function match($url)
+    public function match($value)
     {
-        $decoded = urldecode($url);
-
         usort($this->rules, array($this, 'sort'));
 
         foreach ($this->rules as $rule) {
-            $match = $rule->match($decoded);
+            $match = $rule->match($value);
 
             if ($match === false) {
                 continue;
@@ -107,14 +146,12 @@ class Router
             return $this->dependencyManager->get($rule->getController());
         }
 
-
-
         return $this->dependencyManager->get($this->catchallController);
     }
 
     /**
-     * @param Rule $a
-     * @param Rule $b
+     * @param AbstractRule $a
+     * @param AbstractRule $b
      *
      * @return int
      */
@@ -123,10 +160,20 @@ class Router
         $complexityA = $a->complexity();
         $complexityB = $b->complexity();
 
-        if ($complexityA === $complexityB) {
-            return 0;
-        }
+        return $complexityB - $complexityA;
+    }
 
-        return $complexityA > $complexityB ? -1 : 1;
+    /**
+     * @param string $routeType
+     *
+     * @return Router
+     */
+    public function setRouteType($routeType)
+    {
+        $this->routeType = $routeType;
+
+        $this->resolveRulePrototype();
+
+        return $this;
     }
 }

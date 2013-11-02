@@ -1,8 +1,8 @@
 <?php
 
-namespace Web\Route;
+namespace Web\Route\Abstraction;
 
-class Rule
+abstract class AbstractRule
 {
     /**
      * @var array
@@ -17,7 +17,7 @@ class Rule
     /**
      * @var string[]
      */
-    protected $expressions = array();
+    protected $filters = array();
 
     /**
      * @var array Key=>Value pairs
@@ -27,20 +27,12 @@ class Rule
     /**
      * @var string
      */
-    protected $path;
+    protected $pattern;
 
     /**
      * @var string
      */
-    protected $pattern;
-
-    /**
-     * Count the number of pattern segments for this rule.
-     */
-    public function complexity()
-    {
-        return substr_count($this->path, '/');
-    }
+    protected $expression;
 
     /**
      * @return string
@@ -53,21 +45,22 @@ class Rule
     /**
      * @return string
      */
-    public function getPath()
+    public function getPattern()
     {
-        return $this->path;
+        return $this->pattern;
     }
 
     /**
-     * @param string $url
+     * @param string $value
      *
      * @return array|bool
      */
-    public function match($url)
+    public function match($value)
     {
         $match = array();
+        $clean = $this->validate($this->clean($value));
 
-        if (!preg_match($this->pattern, $url, $match)) {
+        if (!preg_match($this->expression, $clean, $match)) {
             return false;
         }
 
@@ -88,7 +81,7 @@ class Rule
 
         ksort($this->params, SORT_STRING);
 
-        if (!$this->matchExpressions($this->params)) {
+        if (!$this->matchFilters($this->params)) {
             return false;
         }
 
@@ -112,49 +105,22 @@ class Rule
      *
      * @return $this
      */
-    public function setExpressions($expressions)
+    public function setFilters($expressions)
     {
-        $this->expressions = $expressions;
+        $this->filters = $expressions;
 
         return $this;
     }
 
-    /** @param string $path
+    /** @param string $pattern
      * @return $this
      */
-    public function setPath($path)
+    public function setPattern($pattern)
     {
-        $this->path    = $path;
-        $this->pattern = $this->convertToPattern($path);
+        $this->pattern    = $pattern;
+        $this->expression = $this->convertToExpression($pattern);
 
         return $this;
-    }
-
-    /**
-     * @param string $path
-     *
-     * @return string
-     */
-    protected function convertToPattern($path)
-    {
-        $parts = explode('/', $path);
-
-        foreach ($parts as &$part) {
-            $match = array();
-
-            if (preg_match('/^(\:|\?)([a-z_]{1}[a-z0-9\-_]*)$/i', $part, $match)) {
-                $optional            = $match[1] === '?' ? '?' : '';
-                $name                = $match[2];
-                $this->params[$name] = '';
-                $part                = '([^\/\?]+)' . $optional;
-                $this->captureKeys[] = $name;
-            }
-            else {
-                $part = preg_quote($part, '/');
-            }
-        }
-
-        return '/^' . implode('\/', $parts) . '(?:\/([^\/\?]+))*(?:\?.+)?$/i';
     }
 
     /**
@@ -164,9 +130,9 @@ class Rule
      *
      * @return bool
      */
-    protected function matchExpressions($params)
+    protected function matchFilters($params)
     {
-        foreach ($this->expressions as $key => $expression) {
+        foreach ($this->filters as $key => $expression) {
             if (!isset($params[$key])) {
                 return false;
             }
@@ -178,4 +144,28 @@ class Rule
 
         return true;
     }
+
+    /**
+     * Count the number of pattern segments for this rule.
+     */
+    abstract public function complexity();
+
+    /**
+     * @return string
+     */
+    abstract protected function resolveExpressionFromPattern();
+
+    /**
+     * @param string $value
+     *
+     * @return string
+     */
+    abstract public function clean($value);
+
+    /**
+     * @param string $value
+     *
+     * @return string
+     */
+    abstract public function validate($value);
 }
