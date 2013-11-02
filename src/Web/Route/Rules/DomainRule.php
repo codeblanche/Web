@@ -25,11 +25,10 @@ class DomainRule extends AbstractRule
         foreach ($parts as &$part) {
             $match = array();
 
-            if (preg_match('/^(\:|\?)([a-z\d]{1}[a-z\d\-]*)$/i', $part, $match)) {
-                $optional            = $match[1] === '?' ? '?' : '';
-                $name                = $match[2];
+            if (preg_match('/^(\:([a-z_]{1}[a-z\d\-_]*)|\*?)$/i', $part, $match)) {
+                $name                = isset($match[2]) ? $match[2] : count($this->params);
                 $this->params[$name] = '';
-                $part                = '([^\.]+)' . $optional;
+                $part                = '([^\.]+)';
                 $this->captureKeys[] = $name;
             }
             else {
