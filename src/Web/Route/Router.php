@@ -46,8 +46,8 @@ class Router
      * @var array
      */
     protected $routeTypeRulePrototypeMap = array(
-        'uri'    => 'Route\UriRule',
-        'domain' => 'Route\DomainRule',
+        'uri'    => 'Web\Route\Rules\UriRule',
+        'domain' => 'Web\Route\Rules\DomainRule',
     );
 
     /**

@@ -118,7 +118,7 @@ abstract class AbstractRule
     public function setPattern($pattern)
     {
         $this->pattern    = $pattern;
-        $this->expression = $this->convertToExpression($pattern);
+        $this->expression = $this->resolveExpressionFromPattern();
 
         return $this;
     }
