@@ -46,7 +46,7 @@ class UriRule extends AbstractRule
      */
     public function clean($value)
     {
-        return filter_var(urldecode($value), FILTER_SANITIZE_STRING);
+        return '/' . ltrim(filter_var(urldecode($value), FILTER_SANITIZE_STRING), '/');
     }
 
     /**
