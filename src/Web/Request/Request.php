@@ -280,4 +280,22 @@ class Request
 
         return implode('.', array_slice($parts, -1 * $maxLevels));
     }
+
+    /**
+     * Retrieve the requests protocol
+     *
+     * @param bool $raw Also return protocol version if available
+     *
+     * @return string
+     */
+    public function protocol($raw = false)
+    {
+        if ($raw) {
+            return $this->server('SERVER_PROTOCOL');
+        }
+
+        $parts = explode('/', $this->server('SERVER_PROTOCOL'));
+
+        return array_shift($parts);
+    }
 }
