@@ -28,7 +28,7 @@ class UriRule extends AbstractRule
                 $optional            = $match[1] === '?' ? '?' : '';
                 $name                = $match[2];
                 $this->params[$name] = '';
-                $part                = '([^\/\?]+)' . $optional;
+                $part                = $optional . '([^\/\?]+)' . $optional;
                 $this->captureKeys[] = $name;
             }
             else {
