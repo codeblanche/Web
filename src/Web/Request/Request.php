@@ -296,6 +296,6 @@ class Request
 
         $parts = explode('/', $this->server('SERVER_PROTOCOL'));
 
-        return strtolower(array_shift($parts));
+        return strtolower(array_shift($parts)) . $this->server('HTTPS') === 'on' ? 's' : '';
     }
 }
