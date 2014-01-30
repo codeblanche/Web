@@ -11,7 +11,9 @@ class UriRule extends AbstractRule
      */
     public function complexity()
     {
-        return substr_count($this->pattern, '/');
+        $dynamicPartsCount = substr_count($this->pattern, ':') + substr_count($this->pattern, '?');
+
+        return (substr_count($this->pattern, '/') - $dynamicPartsCount) * 100 + $dynamicPartsCount;
     }
 
     /**
