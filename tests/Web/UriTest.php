@@ -93,8 +93,8 @@ class UriTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('password', $uri->getPass());
         $this->assertEquals('randomhostname', $uri->getHost());
         $this->assertEquals('81', $uri->getPort());
-        $this->assertEquals('/', $uri->getPath());
-        $this->assertEquals('/', $uri->getDirname());
+        $this->assertEquals('', $uri->getPath());
+        $this->assertEquals('', $uri->getDirname());
         $this->assertEquals('', $uri->getBasename());
         $this->assertEquals('', $uri->getExtension());
         $this->assertEquals('', $uri->getFilename());

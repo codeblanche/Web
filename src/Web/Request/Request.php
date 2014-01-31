@@ -17,7 +17,7 @@ class Request
     /**
      * @var array Order in which to check request collections for a value. [G = GET, P = POST, C = COOKIE, S = SESSION, E = ENV, H = SERVER]
      */
-    protected $requestOrder = array('G', 'P');
+    protected $requestOrder = array();
 
     /**
      * @var array Request order method mapping
@@ -39,7 +39,7 @@ class Request
      *
      * @return \Web\Request\Request
      */
-    public function __construct($requestUri = null, $requestOrder = 'GP')
+    public function __construct($requestUri = null, $requestOrder = 'GPC')
     {
         if (empty($requestUri)) {
             $requestUri = $this->resolveFullUrlFromHeaders();
@@ -64,6 +64,36 @@ class Request
         $path     = $this->server('REQUEST_URI');
 
         return "{$protocol}://{$host}:{$port}{$path}";
+    }
+
+    /**
+     * Resolve a value from the given collection.
+     *
+     * @param string $name
+     * @param array  $source
+     * @param bool   $sanitize
+     * @param bool   $array
+     *
+     * @return mixed
+     */
+    protected function resolveValue($name, &$source = null, $sanitize = true, $array = false)
+    {
+        if (!isset($source[$name])) {
+            return $array ? array() : null;
+        }
+
+        $filter = 0;
+        $flags  = FILTER_FLAG_EMPTY_STRING_NULL | FILTER_NULL_ON_FAILURE;
+
+        if ($sanitize) {
+            $filter = $filter | FILTER_SANITIZE_STRING;
+            $flags  = $flags | FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH;
+        }
+        if ($array) {
+            $flags = $flags | FILTER_FORCE_ARRAY; // FILTER_REQUIRE_ARRAY |
+        }
+
+        return filter_var($source[$name], $filter, array('flags' => $flags));
     }
 
     /**
@@ -142,57 +172,49 @@ class Request
 
     /**
      * @param string $name
+     * @param bool   $sanitize
      *
      * @return mixed
      */
-    public function cookie($name)
+    public function cookie($name, $sanitize = true)
     {
-        if (!isset($_COOKIE[$name])) {
-            return null;
-        }
-
-        return $_COOKIE[$name];
+        return $this->resolveValue($name, $_COOKIE, $sanitize);
     }
 
     /**
      * @param string $name
+     * @param bool   $sanitize
      *
      * @return mixed
      */
-    public function env($name)
+    public function env($name, $sanitize = true)
     {
-        if (!isset($_ENV[$name])) {
-            return null;
-        }
-
-        return $_ENV[$name];
+        return $this->resolveValue($name, $_ENV, $sanitize);
     }
 
     /**
      * Retrieve the the date associated with a file upload
      *
      * @param string $name
+     * @param bool   $sanitize
      *
      * @return array
      */
-    public function files($name)
+    public function files($name, $sanitize = true)
     {
-        if (!isset($_FILES[$name])) {
-            return null;
-        }
-
-        return $_FILES[$name];
+        return $this->resolveValue($name, $_FILES, $sanitize, true);
     }
 
     /**
      * Retrieve date from the input stream
      *
      * @param string $source
+     * @param bool   $sanitize
      *
-     * @throws InvalidArgumentException
+     * @throws \InvalidArgumentException
      * @return mixed
      */
-    public function put($source = 'php://input')
+    public function put($source = 'php://input', $sanitize = true)
     {
         $source = @fopen($source, 'r');
 
@@ -208,15 +230,16 @@ class Request
 
         fclose($source);
 
-        return $data;
+        return $sanitize ? filter_var($data, FILTER_SANITIZE_STRING) : $data;
     }
 
     /**
      * @param string $name
+     * @param bool   $sanitize
      *
      * @return mixed
      */
-    public function get($name)
+    public function get($name, $sanitize = true)
     {
         $queryString = $this->uri()->getQuery();
 
@@ -224,11 +247,7 @@ class Request
             return $queryString->get($name);
         }
 
-        if (!isset($_GET[$name])) {
-            return null;
-        }
-
-        return $_GET[$name];
+        return $this->resolveValue($name, $_GET, $sanitize);
     }
 
     /**
@@ -241,30 +260,24 @@ class Request
 
     /**
      * @param string $name
+     * @param bool   $sanitize
      *
      * @return mixed
      */
-    public function post($name)
+    public function post($name, $sanitize = true)
     {
-        if (!isset($_POST[$name])) {
-            return null;
-        }
-
-        return $_POST[$name];
+        return $this->resolveValue($name, $_POST, $sanitize);
     }
 
     /**
      * @param string $name
+     * @param bool   $sanitize
      *
      * @return string
      */
-    public function server($name)
+    public function server($name, $sanitize = true)
     {
-        if (!isset($_SERVER[$name])) {
-            return null;
-        }
-
-        return $_SERVER[$name];
+        return $this->resolveValue($name, $_SERVER, $sanitize);
     }
 
     /**
