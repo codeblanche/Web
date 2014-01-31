@@ -20,6 +20,7 @@ class RequestTest extends \PHPUnit_Framework_TestCase
         $_SERVER['server1'] = 'server1';
         $_ENV['env1']       = 'env1';
         $_FILES['files1']   = 'files1';
+        $_FILES['files3']   = array('tmp_name' => '', 'size' => '');
     }
 
     public function testCookie()
@@ -36,8 +37,25 @@ class RequestTest extends \PHPUnit_Framework_TestCase
 
     public function testFiles()
     {
-        $this->assertEquals('files1', $this->request->files('files1'));
-        $this->assertNull($this->request->files('files2'));
+        $files1 = $this->request->files('files1');
+
+        $this->assertNotNull($files1);
+        $this->assertTrue(is_array($files1));
+        $this->assertTrue(in_array($_FILES['files1'], $files1));
+
+        $files2 = $this->request->files('files2');
+
+        $this->assertNotNull($files2);
+        $this->assertTrue(is_array($files2));
+        $this->assertTrue(empty($files2));
+
+        $files3 = $this->request->files('files3');
+
+        $this->assertNotNull($files3);
+        $this->assertTrue(is_array($files3));
+        $this->assertTrue(!empty($files3));
+        $this->assertArrayHasKey('tmp_name', $files3);
+        $this->assertArrayHasKey('size', $files3);
     }
 
     public function testGet()

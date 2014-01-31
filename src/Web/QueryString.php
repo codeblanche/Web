@@ -50,16 +50,30 @@ class QueryString
      * Retrieve a query string value (by reference)
      *
      * @param string $key
+     * @param bool   $sanitize
+     * @param bool   $array
      *
      * @return mixed
      */
-    public function get($key)
+    public function get($key, $sanitize = true, $array = false)
     {
+
         if (!isset($this->data[$key])) {
-            return null;
+            return $array ? array() : null;
         }
 
-        return $this->data[$key];
+        $filter = 0;
+        $flags  = FILTER_FLAG_EMPTY_STRING_NULL | FILTER_NULL_ON_FAILURE;
+
+        if ($sanitize) {
+            $filter = $filter | FILTER_SANITIZE_STRING;
+            $flags  = $flags | FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH;
+        }
+        if ($array) {
+            $flags = $flags | FILTER_REQUIRE_ARRAY | FILTER_FORCE_ARRAY;
+        }
+
+        return filter_var($this->data[$key], $filter, array('flags' => $flags));
     }
 
     /**
