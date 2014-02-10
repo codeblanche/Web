@@ -73,12 +73,14 @@ class RequestTest extends \PHPUnit_Framework_TestCase
     {
         $this->assertEquals('post1', $this->request->post('post1'));
         $this->assertNull($this->request->post('post2'));
+        $this->assertArrayHasKey('post1', $this->request->post());
     }
 
     public function testPut()
     {
         $file = __DIR__ . '/../../fixtures/php-input.dat';
-        $this->assertNull($this->request->put());
+        $this->assertNull($this->request->put(null, false));
+        $this->assertEquals('', $this->request->put(null, true));
         $this->assertEquals(file_get_contents($file), $this->request->put($file));
     }
 

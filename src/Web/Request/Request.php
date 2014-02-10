@@ -78,10 +78,6 @@ class Request
      */
     protected function resolveValue($name, &$source = null, $sanitize = true, $array = false)
     {
-        if (!isset($source[$name])) {
-            return $array ? array() : null;
-        }
-
         $filter = 0;
         $flags  = FILTER_FLAG_EMPTY_STRING_NULL | FILTER_NULL_ON_FAILURE;
 
@@ -91,6 +87,20 @@ class Request
         }
         if ($array) {
             $flags = $flags | FILTER_FORCE_ARRAY; // FILTER_REQUIRE_ARRAY |
+        }
+
+        if (empty($name)) {
+            $result = array();
+
+            foreach ($source as $key => $value) {
+                $result[$key] = filter_var($value, $filter, array('flags' => $flags));
+            }
+
+            return $result;
+        }
+
+        if (!isset($source[$name])) {
+            return $array ? array() : null;
         }
 
         return filter_var($source[$name], $filter, array('flags' => $flags));
@@ -208,7 +218,7 @@ class Request
     /**
      * Retrieve date from the input stream
      *
-     * @param string $source
+     * @param string $source (Default: 'php://input')
      * @param bool   $sanitize
      *
      * @throws \InvalidArgumentException
@@ -216,6 +226,10 @@ class Request
      */
     public function put($source = 'php://input', $sanitize = true)
     {
+        if (is_null($source)) {
+            $source = 'php://input';
+        }
+
         $source = @fopen($source, 'r');
 
         if (!is_resource($source)) {
@@ -239,7 +253,7 @@ class Request
      *
      * @return mixed
      */
-    public function get($name, $sanitize = true)
+    public function get($name = '', $sanitize = true)
     {
         $queryString = $this->uri()->getQuery();
 
@@ -264,7 +278,7 @@ class Request
      *
      * @return mixed
      */
-    public function post($name, $sanitize = true)
+    public function post($name = '', $sanitize = true)
     {
         return $this->resolveValue($name, $_POST, $sanitize);
     }
@@ -275,7 +289,7 @@ class Request
      *
      * @return string
      */
-    public function server($name, $sanitize = true)
+    public function server($name = '', $sanitize = true)
     {
         return $this->resolveValue($name, $_SERVER, $sanitize);
     }
