@@ -46,22 +46,18 @@ class QueryString
         return $this;
     }
 
+
     /**
      * Retrieve a query string value (by reference)
      *
-     * @param string $key
+     * @param string $name
      * @param bool   $sanitize
      * @param bool   $array
      *
      * @return mixed
      */
-    public function get($key, $sanitize = true, $array = false)
+    public function get($name, $sanitize = true, $array = false)
     {
-
-        if (!isset($this->data[$key])) {
-            return $array ? array() : null;
-        }
-
         $filter = 0;
         $flags  = FILTER_FLAG_EMPTY_STRING_NULL | FILTER_NULL_ON_FAILURE;
 
@@ -73,7 +69,21 @@ class QueryString
             $flags = $flags | FILTER_REQUIRE_ARRAY | FILTER_FORCE_ARRAY;
         }
 
-        return filter_var($this->data[$key], $filter, array('flags' => $flags));
+        if (empty($name)) {
+            $result = array();
+
+            foreach ($this->data as $key => $value) {
+                $result[$key] = filter_var($value, $filter, array('flags' => $flags));
+            }
+
+            return $result;
+        }
+
+        if (!isset($this->data[$name])) {
+            return $array ? array() : null;
+        }
+
+        return filter_var($this->data[$name], $filter, array('flags' => $flags));
     }
 
     /**
