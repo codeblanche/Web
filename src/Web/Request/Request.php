@@ -78,32 +78,41 @@ class Request
      */
     protected function resolveValue($name, &$source = null, $sanitize = true, $array = false)
     {
-        $filter = 0;
-        $flags  = FILTER_FLAG_EMPTY_STRING_NULL | FILTER_NULL_ON_FAILURE;
-
-        if ($sanitize) {
-            $filter = $filter | FILTER_SANITIZE_STRING;
-            $flags  = $flags | FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH;
-        }
-        if ($array) {
-            $flags = $flags | FILTER_FORCE_ARRAY; // FILTER_REQUIRE_ARRAY |
-        }
+        $result = $array ? array() : null;
 
         if (empty($name)) {
-            $result = array();
+            $result = $source;
+        }
+        elseif (isset($source[$name])) {
+            $result = $source[$name];
+        }
 
-            foreach ($source as $key => $value) {
-                $result[$key] = filter_var($value, $filter, array('flags' => $flags));
-            }
-
+        if (!$sanitize) {
             return $result;
         }
 
-        if (!isset($source[$name])) {
-            return $array ? array() : null;
+        if (is_array($result)) {
+            foreach ($result as $key => $value) {
+                $result[$key] = $this->resolveValue('', $value, $sanitize);
+            }
+        }
+        else {
+            $filter = 0;
+            $flags  = FILTER_FLAG_EMPTY_STRING_NULL | FILTER_NULL_ON_FAILURE;
+
+            if ($sanitize) {
+                $filter = $filter | FILTER_SANITIZE_STRING;
+                $flags  = $flags | FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH;
+            }
+
+            if ($array) {
+                $flags = $flags | FILTER_FORCE_ARRAY;
+            }
+
+            $result = filter_var($result, $filter, array('flags' => $flags));
         }
 
-        return filter_var($source[$name], $filter, array('flags' => $flags));
+        return $result;
     }
 
     /**
