@@ -15,7 +15,11 @@ class RequestTest extends \PHPUnit_Framework_TestCase
     {
         $this->request      = new Request(null, 'PGCHE');
         $_POST['post1']     = 'post1';
+        $_POST['post2']     = array('post2.1', 'post2.2', 'post2.3');
+        $_POST['post3']     = array('001' => 'post3.1', '002' => 'post3.2', '003' => 'post3.3');
         $_GET['get1']       = 'get1';
+        $_GET['get2']       = array('get2.1', 'get2.2', 'get2.3');
+        $_GET['get3']       = array('001' => 'get3.1', '002' => 'get3.2', '003' => 'get3.3');
         $_COOKIE['cookie1'] = 'cookie1';
         $_SERVER['server1'] = 'server1';
         $_ENV['env1']       = 'env1';
@@ -60,8 +64,11 @@ class RequestTest extends \PHPUnit_Framework_TestCase
 
     public function testGet()
     {
-        $this->assertEquals('get1', $this->request->get('get1'));
-        $this->assertNull($this->request->get('get2'));
+        $this->assertArrayHasKey('get1', $this->request->get());
+        $this->assertEquals($_GET['get1'], $this->request->get('get1'));
+        $this->assertNull($this->request->get('getNonExistent'));
+        $this->assertEquals($_GET['get2'], $this->request->get('get2'));
+        $this->assertEquals($_GET['get3'], $this->request->get('get3'));
     }
 
     public function testGetUri()
@@ -71,9 +78,11 @@ class RequestTest extends \PHPUnit_Framework_TestCase
 
     public function testPost()
     {
-        $this->assertEquals('post1', $this->request->post('post1'));
-        $this->assertNull($this->request->post('post2'));
         $this->assertArrayHasKey('post1', $this->request->post());
+        $this->assertEquals($_POST['post1'], $this->request->post('post1'));
+        $this->assertNull($this->request->post('postNonExistent'));
+        $this->assertEquals($_POST['post2'], $this->request->post('post2'));
+        $this->assertEquals($_POST['post3'], $this->request->post('post3'));
     }
 
     public function testPut()
