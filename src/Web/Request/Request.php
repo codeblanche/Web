@@ -56,7 +56,7 @@ class Request
     private function resolveFullUrlFromHeaders()
     {
         $rawProtocol = $this->server('SERVER_PROTOCOL');
-        $ssl         = $this->server('HTTPS') !== '';
+        $ssl         = $this->server('HTTPS') != '';
 
         $protocol = strtolower(substr($rawProtocol, 0, strpos($rawProtocol, '/'))) . ($ssl ? 's' : '');
         $host     = $this->server('HTTP_HOST');
