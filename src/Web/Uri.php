@@ -67,6 +67,15 @@ class Uri
      */
     protected $user;
 
+    protected $portMap = array(
+        'http'   => 80,
+        'https'  => 443,
+        'ftp'    => 21,
+        'ssh'    => 22,
+        'telnet' => 23,
+        'smtp'   => 25,
+    );
+
     /**
      * Constructor override.
      *
@@ -308,13 +317,18 @@ class Uri
     }
 
     /**
-     * @param int $port
+     * @param int|null $port
      *
      * @return Uri
      */
     public function setPort($port)
     {
-        $this->port = $port;
+        if (!empty($port)) {
+            $this->port = intval($port);
+        }
+        else {
+            $this->port = null;
+        }
 
         return $this;
     }
@@ -344,7 +358,7 @@ class Uri
      */
     public function setScheme($scheme)
     {
-        $this->scheme = $scheme;
+        $this->scheme = strtolower($scheme);
 
         return $this;
     }
@@ -409,7 +423,7 @@ class Uri
 
         $result .= $this->host;
 
-        if (!empty($this->port)) {
+        if (!empty($this->port) && (isset($this->portMap[$this->scheme]) && $this->port != $this->portMap[$this->scheme])) {
             $result .= ":{$this->port}";
         }
 
